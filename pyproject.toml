@@ -1,0 +1,15 @@
+[project]
+name = "living-systems-observatory"
+version = "0.1.0"
+description = "Lightweight observability backend"
+requires-python = ">=3.11"
+
+dependencies = [
+  "fastapi",
+  "uvicorn[standard]",
+  "pydantic",
+  "pydantic-settings",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

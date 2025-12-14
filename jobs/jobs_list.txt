@@ -1,0 +1,185 @@
+Phase 0 — Project Skeleton (30–45 min) ---------------------------------------
+
+Create repo + folder structure
+
+Add pyproject.toml
+
+Add .env.example
+
+Add .gitignore
+
+Create empty FastAPI app (main.py)
+
+Verify server starts (/healthz)
+
+Phase 1 — Settings & Logging (30–45 min) ---------------------------------------
+
+Add settings.py (DB URL, thresholds)
+
+Add logging_config.py
+
+Configure structured logger
+
+Load env vars correctly
+
+Phase 2 — Database Layer (60–90 min) ---------------------------------------
+
+Create SQLite connection helper
+
+Define DB schema:
+
+systems
+
+events
+
+Write migrate.py to create tables
+
+Run migration locally
+
+Verify DB file appears in data/
+
+Phase 3 — System Registry API (45–60 min) ---------------------------------------
+
+Pydantic schemas for systems
+
+Implement:
+
+POST /systems
+
+GET /systems
+
+Insert + fetch from DB
+
+Add basic validation
+
+Smoke test endpoints
+
+Phase 4 — Event Ingestion API (60–90 min) ---------------------------------------
+
+Pydantic schemas for events
+
+Implement:
+
+POST /systems/{id}/events
+
+Validate system exists
+
+Batch insert events
+
+Handle payload JSON safely
+
+Return inserted count
+
+Phase 5 — Windowing Logic (30 min) ---------------------------------------
+
+Implement time window helper:
+
+now
+
+window_start
+
+Ensure UTC consistency
+
+Unit test window math
+
+Phase 6 — Metrics Computation (60–90 min) ---------------------------------------
+
+Query events by:
+
+system_id
+
+time window
+
+Compute:
+
+total
+
+errors
+
+error_rate
+
+rps
+
+p95 latency
+
+Unit tests for edge cases:
+
+no events
+
+all errors
+
+mixed latencies
+
+Phase 7 — Health Classification (30–45 min) ---------------------------------------
+
+Implement OK/WARN/FAIL rules
+
+Return human-readable reason
+
+Unit tests for thresholds
+
+Phase 8 — Metrics & Health APIs (45–60 min) ---------------------------------------
+
+Implement:
+
+GET /metrics
+
+GET /health
+
+Wire DB → metrics → health
+
+Verify real responses
+
+Phase 9 — Tests (60–90 min) ---------------------------------------
+
+test_metrics.py
+
+test_health.py
+
+test_api_smoke.py
+
+Ensure:
+
+pytest passes
+
+server runs clean
+
+Phase 10 — ETL Integration (45–60 min) ---------------------------------------
+
+Add ETL telemetry client module
+
+Emit events on:
+
+extract
+
+transform
+
+load
+
+Verify backend receives data
+
+Run ETL → query health
+
+Phase 11 — Demo & Validation (30 min) ---------------------------------------
+
+Seed demo events (optional script)
+
+Trigger WARN / FAIL states
+
+Verify health changes correctly
+
+Phase 12 — README & Polish (45–60 min) ---------------------------------------
+
+Explain:
+
+what it does
+
+how ETL talks to it
+
+example curl
+
+how health works
+
+Add run instructions
+
+Final commit + push

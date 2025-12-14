@@ -1,0 +1,45 @@
+living_systems_observatory/
+├── README.md
+├── pyproject.toml
+├── .env.example
+├── .gitignore
+│
+├── src/
+│   └── lso/
+│       ├── __init__.py
+│       │
+│       ├── main.py                 # FastAPI app entry
+│       │
+│       ├── settings.py             # env-based config (DB URL, thresholds)
+│       ├── logging_config.py       # structured logging setup
+│       │
+│       ├── api/
+│       │   ├── __init__.py
+│       │   ├── routes_systems.py   # POST/GET /systems
+│       │   ├── routes_events.py    # POST /systems/{id}/events
+│       │   ├── routes_metrics.py   # GET metrics + health
+│       │   └── schemas.py          # Pydantic request/response models
+│       │
+│       ├── core/
+│       │   ├── __init__.py
+│       │   ├── windowing.py        # time window helpers
+│       │   ├── metrics.py          # totals, error_rate, rps, p95
+│       │   └── health.py           # OK/WARN/FAIL logic
+│       │
+│       ├── db/
+│       │   ├── __init__.py
+│       │   ├── connection.py       # SQLite engine/session
+│       │   ├── models.py           # DB schema (systems, events)
+│       │   ├── queries.py          # insert/select helpers
+│       │   └── migrate.py          # create tables
+│
+├── tests/
+│   ├── test_metrics.py
+│   ├── test_health.py
+│   └── test_api_smoke.py
+│
+├── scripts/
+│   └── seed_demo_data.py
+│
+└── data/
+    └── lso.db        # local SQLite DB (gitignored)
