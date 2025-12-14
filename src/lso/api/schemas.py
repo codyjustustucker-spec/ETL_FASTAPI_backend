@@ -2,6 +2,7 @@ from datetime import datetime
 from pydantic import BaseModel, Field, ConfigDict
 from enum import Enum
 from typing import Any
+from typing import Optional
 
 
 class SystemCreateRequest(BaseModel):
@@ -36,3 +37,31 @@ class EventsIngestRequest(BaseModel):
 class EventsIngestResponse(BaseModel):
     system_id: int
     inserted: int
+
+
+class MetricsOut(BaseModel):
+    system_id: int
+    window_seconds: int
+    window_start: datetime
+    window_end: datetime
+    total: int
+    errors: int
+    error_rate: float
+    rps: float
+    p95_latency: Optional[float] = None
+
+
+class HealthOut(BaseModel):
+    system_id: int
+    window_seconds: int
+    window_start: datetime
+    window_end: datetime
+
+    health: str
+    reason: str
+
+    total: int
+    errors: int
+    error_rate: float
+    rps: float
+    p95_latency: Optional[float] = None

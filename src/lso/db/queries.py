@@ -78,3 +78,22 @@ def insert_events(system_id: int, events: list[dict]) -> int:
         return len(rows)
     finally:
         conn.close()
+
+
+def fetch_events_in_window(system_id: int, start_iso: str, end_iso: str) -> list[dict]:
+    conn = get_conn()
+    try:
+        rows = conn.execute(
+            """
+            SELECT ts, status, latency_ms
+            FROM events
+            WHERE system_id = ?
+              AND ts >= ?
+              AND ts <= ?
+            ORDER BY ts ASC
+            """,
+            (system_id, start_iso, end_iso),
+        ).fetchall()
+        return [dict(r) for r in rows]
+    finally:
+        conn.close()

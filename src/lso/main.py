@@ -5,6 +5,7 @@ from lso.logging_config import setup_logging
 from lso.settings import settings
 from lso.api.routes_systems import router as systems_router
 from lso.api.routes_events import router as events_router
+from lso.api.routes_metrics import router as metrics_router
 
 
 setup_logging()
@@ -19,6 +20,7 @@ app = FastAPI(
 
 app.include_router(systems_router)
 app.include_router(events_router)
+app.include_router(metrics_router)
 
 
 @app.get("/healthz")

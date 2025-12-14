@@ -54,7 +54,7 @@ Add basic validation
 
 Smoke test endpoints
 
-Phase 4 — Event Ingestion API (60–90 min) ---------------------------------------
+Phase 4 — Event Ingestion API (60–90 min) --------------------------------------- Compleated
 
 Pydantic schemas for events
 

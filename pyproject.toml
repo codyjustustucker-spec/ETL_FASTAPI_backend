@@ -9,7 +9,9 @@ dependencies = [
   "uvicorn[standard]",
   "pydantic",
   "pydantic-settings",
+  "pytest",
+  "httpx",
 ]
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["test"]
