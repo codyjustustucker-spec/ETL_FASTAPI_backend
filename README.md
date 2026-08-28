@@ -1,73 +1,98 @@
-# LSO Backend – Telemetry & Health Service
+# LSO — Telemetry & Health Service
 
-## Overview
+**A working FastAPI observability backend that receives structured telemetry from external systems and turns it into rolling system-health metrics.**
 
-This repository contains the **LSO (Living Systems Observatory) backend**, a FastAPI-based service responsible for **receiving telemetry events from ETL systems**, storing them, and computing **system health metrics** over a rolling time window.
+**Python • FastAPI • Pydantic • REST APIs • Event Processing • Observability**
 
-The backend is intentionally lightweight and focused:
+- ✅ Accepts telemetry from external systems
+- ✅ Validates structured event payloads
+- ✅ Stores telemetry events
+- ✅ Computes rolling health metrics
+- ✅ Isolates data by system
+- ✅ Integrated and verified with the Weather ETL Pipeline
 
-* It does **not** run ETL jobs
-* It does **not** control data pipelines
-* It **observes** systems by ingesting structured events
+---
 
-Multiple ETL pipelines can report into a single backend instance.
+## What It Does
+
+LSO (**Living Systems Observatory**) is a lightweight backend designed to observe other software systems.
+
+External systems send structured telemetry events to LSO. The service validates and stores those events, then calculates health information over a rolling time window.
+
+```text
+External Systems
+       │
+       │ telemetry events
+       ▼
+┌─────────────────────┐
+│       LSO API       │
+│      FastAPI        │
+└─────────┬───────────┘
+          │
+          ▼
+   Schema Validation
+          │
+          ▼
+      Event Store
+          │
+          ▼
+   Health Aggregator
+          │
+          ▼
+ OK / DEGRADED / UNHEALTHY
+```
+
+LSO is deliberately an **observer, not an orchestrator**.
+
+It does not run ETL jobs or control external pipelines. Producers remain independent and report telemetry into the service.
+
+Multiple systems can report into a single LSO instance.
 
 ---
 
 ## Core Responsibilities
 
-* Accept telemetry events from external systems
-* Validate event schemas
-* Persist events
-* Aggregate recent events per system
-* Expose health summaries via an API
+LSO provides five main capabilities:
 
-This separation allows ETL systems to remain simple while still being observable.
+1. **Register systems**
+2. **Receive telemetry events**
+3. **Validate incoming event schemas**
+4. **Store and aggregate recent telemetry**
+5. **Expose calculated health through a REST API**
 
----
-
-## Architecture
-
-**High-level flow:**
-
-```
-ETL Pipeline(s)
-      ↓
-POST /systems/{system_id}/events
-      ↓
-Event Store (DB / in-memory)
-      ↓
-Health Aggregator
-      ↓
-GET /systems/{system_id}/health
-```
-
-Each system is isolated by `system_id`.
+Each monitored system is isolated using its own `system_id`.
 
 ---
 
-## API Endpoints
+## API
 
-### Register or List Systems
+### Register a System
 
 ```http
 POST /systems
-GET  /systems
 ```
 
-Creates or lists known systems. Each system is assigned a unique `system_id`.
+Creates a known system and assigns it a unique `system_id`.
+
+### List Systems
+
+```http
+GET /systems
+```
+
+Returns registered systems.
 
 ---
 
-### Ingest Telemetry Events
+### Submit Telemetry
 
 ```http
 POST /systems/{system_id}/events
 ```
 
-Accepts a batch of telemetry events for a specific system.
+Accepts a batch of structured telemetry events for a specific system.
 
-#### Request body
+Example:
 
 ```json
 {
@@ -80,32 +105,42 @@ Accepts a batch of telemetry events for a specific system.
       "event_type": "success",
       "status": "ok",
       "latency_ms": 12,
-      "payload": {"rows": 168}
+      "payload": {
+        "rows": 168
+      }
     }
   ]
 }
 ```
 
-#### Validation rules
+### Validation
 
-* `event_type` is required
-* `status` must be `ok` or `error`
-* `latency_ms` is required
-* Invalid payloads return **HTTP 422**
+Incoming events are schema validated.
 
-On success, returns **HTTP 202 Accepted**.
+Examples of enforced requirements include:
+
+- `event_type` is required
+- `status` must be `ok` or `error`
+- `latency_ms` is required
+- malformed payloads return **HTTP 422**
+
+Successfully accepted telemetry returns:
+
+```text
+HTTP 202 Accepted
+```
 
 ---
 
-### System Health
+### Query System Health
 
 ```http
 GET /systems/{system_id}/health
 ```
 
-Returns an aggregated health snapshot for the given system over a recent rolling window.
+Returns a health snapshot calculated from telemetry within a recent rolling time window.
 
-Example response:
+Example:
 
 ```json
 {
@@ -125,78 +160,159 @@ Example response:
 
 ---
 
-## Health Computation Logic
+## Health Computation
 
-Health is derived from recent telemetry events:
+Health is calculated from recent telemetry rather than being directly reported by the monitored system.
 
-* Events are filtered by `system_id`
-* Only events within the rolling time window are considered
-* Metrics computed:
+For a requested `system_id`, LSO:
 
-  * total events
-  * error count
-  * error rate
-  * request rate (RPS)
-  * latency percentiles
+```text
+Stored Events
+     │
+     ▼
+Filter by System
+     │
+     ▼
+Filter by Time Window
+     │
+     ▼
+Aggregate Metrics
+     │
+     ▼
+Evaluate Thresholds
+     │
+     ▼
+Health Result
+```
 
-Health status rules (example):
+Metrics include:
 
-* `OK` → error rate below threshold
-* `DEGRADED` → elevated error rate
-* `UNHEALTHY` → sustained failures
+- total events
+- error count
+- error rate
+- request rate (RPS)
+- latency percentiles
+
+Health can resolve to states such as:
+
+```text
+OK
+DEGRADED
+UNHEALTHY
+```
 
 Thresholds are intentionally simple and configurable.
 
 ---
 
-## Design Principles
+## Architecture Decisions
 
-* **Observer-only**: backend never controls pipelines
-* **Schema-driven**: strict validation via Pydantic
-* **System isolation**: all data scoped by `system_id`
-* **Stateless API**: health computed from stored events
-* **Composable**: multiple ETLs can reuse the same backend
+### Observer-Only
+
+LSO observes external systems without controlling them.
+
+This keeps monitoring concerns separate from the systems being monitored.
+
+### Schema-Driven
+
+Telemetry contracts are explicitly validated before events are accepted.
+
+This prevents malformed data from silently entering the observability system.
+
+### System Isolation
+
+Telemetry is scoped by `system_id`, allowing multiple independent producers to use the same backend.
+
+### Derived Health
+
+Health is calculated from stored telemetry over a rolling window rather than maintained as arbitrary mutable state.
+
+### Composable
+
+The service is designed so different pipelines, workers, or services can report through the same telemetry contract.
 
 ---
 
-## Running the Backend
+## Weather ETL Integration
+
+LSO has been integrated with the **Weather ETL Pipeline** as a real telemetry producer.
+
+```text
+Weather ETL Pipeline
+        │
+        │ produces telemetry
+        ▼
+   LSO Backend
+        │
+        ├── validates events
+        ├── stores events
+        └── aggregates metrics
+                │
+                ▼
+           Health API
+```
+
+This creates a simple **producer–observer architecture**:
+
+- the ETL pipeline performs its own work
+- the ETL emits operational telemetry
+- LSO receives and evaluates that telemetry
+- clients can query LSO for health information
+
+[View the Weather ETL Pipeline](https://github.com/codyjustustucker-spec/Weather-ETL-Pipeline)
+
+---
+
+## Running Locally
+
+Start the FastAPI service:
 
 ```bash
 uvicorn app.main:app --reload
 ```
 
-API documentation available at:
+Once running, interactive API documentation is available at:
 
-```
+```text
 http://127.0.0.1:8000/docs
 ```
 
----
-
-## What This Backend Demonstrates
-
-* FastAPI request validation
-* Event-driven observability design
-* Health aggregation patterns
-* Clear API contracts between systems
-* Real-world handling of 404 vs 422 errors
+FastAPI's generated documentation can be used to inspect endpoints and submit requests directly.
 
 ---
 
-## Relationship to ETL Pipeline
+## What This Project Demonstrates
 
-This backend is designed to pair with external ETL systems, such as the **Weather ETL Pipeline**:
+This project demonstrates practical backend and systems-engineering concepts including:
 
-* ETL produces telemetry
-* Backend ingests and evaluates
-* Health endpoint provides operational visibility
+- REST API design
+- FastAPI application development
+- Pydantic request validation
+- explicit API contracts
+- event-driven system boundaries
+- telemetry ingestion
+- rolling-window aggregation
+- health metric computation
+- multi-system isolation
+- error handling
+- HTTP `404`, `422`, and `202` behavior
+- separation of monitoring from execution
+- integration between independent software systems
 
-The two repositories together demonstrate a complete **producer–observer architecture**.
+---
+
+## Project Scope
+
+LSO is intentionally small and focused.
+
+It is not intended to be a full infrastructure-monitoring platform or an ETL orchestrator. Its purpose is to demonstrate a clean telemetry contract and a reusable backend capable of observing multiple independent systems.
+
+Keeping those responsibilities narrow makes the architecture easier to reason about, test, integrate, and extend.
 
 ---
 
 ## Status
 
-Backend integration complete.
+**Backend integration complete.**
 
-Verified via live ETL telemetry ingestion and health reporting.
+Telemetry ingestion and health reporting have been verified through integration with the Weather ETL Pipeline.
